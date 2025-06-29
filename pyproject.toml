@@ -1,0 +1,7 @@
+[project]
+name = "PyNVGT"
+version = "0.1.0"
+description = "Python helpers for working with the non-visual gaming toolkit, including compiler and installer interfaces."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
