@@ -1,7 +1,24 @@
 [project]
 name = "PyNVGT"
-version = "0.1.0"
-description = "Python helpers for working with the non-visual gaming toolkit, including compiler and installer interfaces."
+version = "0.1"
+description = "Python helpers for working with the non-visual gaming toolkit (NVGT). Includes compiler and installer interfaces."
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+authors = [{name = "Carter Temm"}]
+license = "MIT"
+requires-python = ">=3.8"
+dependencies = [
+	"click"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/cartertemm/pynvgt"
+Changelog = "https://github.com/cartertemm/pynvgt/releases"
+Issues = "https://github.com/cartertemm/pynvgt/issues"
+CI = "https://github.com/cartertemm/pynvgt/actions"
+
+[project.scripts]
+pynvgt = "pynvgt.cli:cli"
