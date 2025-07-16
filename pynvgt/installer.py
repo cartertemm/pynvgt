@@ -4,6 +4,7 @@
 import json
 import os
 import platform
+import re
 import subprocess
 import urllib.request
 import tempfile
@@ -16,6 +17,19 @@ from typing import Optional
 BASE_URL = "https://nvgt.gg"
 GITHUB_API_URL = "https://api.github.com/repos/samtupy/nvgt/releases/tags/latest"
 GITHUB_BASE_URL = "https://github.com/samtupy/nvgt/releases/download/latest"
+
+
+def _extract_version_from_filename(filename: str) -> str:
+	match = re.search(r"nvgt_([0-9]+\.[0-9]+\.[0-9]+_[a-zA-Z0-9_]+)\..*", filename)
+	if match:
+		return match.group(1)
+
+
+def _download_file(url: str, path: str) -> None:
+	print(f"Downloading: {url}")
+	with urllib.request.urlopen(url) as response, open(path, 'wb') as out:
+		shutil.copyfileobj(response, out)
+	print(f"Downloaded to: {path}")
 
 
 @dataclass
@@ -83,30 +97,26 @@ class NVGTBuild:
 	def _get_dev_version(cls) -> 'NVGTBuild':
 		with urllib.request.urlopen(GITHUB_API_URL) as response:
 			data = json.loads(response.read().decode('utf-8'))
-			version = data['tag_name']
-			# Extract download URLs from assets
+			# Extract version and download URLs from assets
+			version = None
 			download_urls = {}
 			for asset in data['assets']:
 				name = asset['name']
+				# we have to extract the version number from the name of the file
+				# because we can't count on tag names
+				version = _extract_version_from_filename(name)
 				if name.endswith('.exe'):
 					download_urls['windows'] = asset['browser_download_url']
 				elif name.endswith('.tar.gz'):
 					download_urls['linux'] = asset['browser_download_url']
 				elif name.endswith('.dmg'):
 					download_urls['macos'] = asset['browser_download_url']
-			
 			return cls(version=version, is_dev=True, download_urls=download_urls)
-
-	def download_file(self, url: str, path: str) -> None:
-		print(f"Downloading: {url}")
-		with urllib.request.urlopen(url) as response, open(path, 'wb') as out:
-			shutil.copyfileobj(response, out)
-		print(f"Downloaded to: {path}")
 
 	def install_windows(self) -> None:
 		with tempfile.TemporaryDirectory() as tmp:
 			installer = os.path.join(tmp, self.windows_version)
-			self.download_file(self.windows_url, installer)
+			_download_file(self.windows_url, installer)
 			subprocess.run([
 				installer,
 				"/VERYSILENT",
@@ -119,7 +129,7 @@ class NVGTBuild:
 		with tempfile.TemporaryDirectory() as tmp:
 			dmg_path = os.path.join(tmp, self.macos_version)
 			mount_point = "/Volumes/NVGT"
-			self.download_file(self.macos_url, dmg_path)
+			_download_file(self.macos_url, dmg_path)
 			subprocess.run(["hdiutil", "attach", dmg_path, "-mountpoint", mount_point], check=True)
 			if os.path.exists(self.macos_install_path):
 				subprocess.run(["sudo", "rm", "-rf", self.macos_install_path], check=True)
@@ -135,7 +145,7 @@ class NVGTBuild:
 	def install_linux(self) -> None:
 		with tempfile.TemporaryDirectory() as tmp:
 			archive = os.path.join(tmp, self.linux_version)
-			self.download_file(self.linux_url, archive)
+			_download_file(self.linux_url, archive)
 			os.makedirs(self.linux_install_path, exist_ok=True)
 			with tarfile.open(archive, "r:gz") as tar:
 				tar.extractall(path=self.linux_install_path)
