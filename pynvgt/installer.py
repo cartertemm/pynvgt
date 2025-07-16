@@ -10,11 +10,13 @@ import urllib.request
 import tempfile
 import shutil
 import tarfile
+from urllib.request import urljoin
 from dataclasses import dataclass
 from typing import Optional
 
 
 BASE_URL = "https://nvgt.gg"
+STABLE_DOWNLOAD_URL = BASE_URL
 GITHUB_API_URL = "https://api.github.com/repos/samtupy/nvgt/releases/tags/latest"
 GITHUB_BASE_URL = "https://github.com/samtupy/nvgt/releases/download/latest"
 
@@ -54,19 +56,19 @@ class NVGTBuild:
 	def windows_url(self) -> str:
 		if self.is_dev and self.download_urls:
 			return self.download_urls.get('windows', '')
-		return f"{GITHUB_BASE_URL}/{self.windows_version}"
+		return f"{BASE_URL}/downloads/{self.windows_version}"
 
 	@property
 	def linux_url(self) -> str:
 		if self.is_dev and self.download_urls:
 			return self.download_urls.get('linux', '')
-		return f"{GITHUB_BASE_URL}/{self.linux_version}"
+		return f"{BASE_URL}/downloads/{self.linux_version}"
 
 	@property
 	def macos_url(self) -> str:
 		if self.is_dev and self.download_urls:
 			return self.download_urls.get('macos', '')
-		return f"{GITHUB_BASE_URL}/{self.macos_version}"
+		return f"{BASE_URL}/downloads/{self.macos_version}"
 
 	@property
 	def windows_install_path(self) -> str:
@@ -154,11 +156,12 @@ class NVGTBuild:
 	def install_for_platform(self, platform_name: Optional[str] = None) -> None:
 		if platform_name is None:
 			platform_name = platform.system()
-		if platform_name == "Windows":
+		platform_name = platform_name.lower()
+		if platform_name == "windows":
 			self.install_windows()
-		elif platform_name == "Darwin":
+		elif platform_name == "darwin":
 			self.install_macos()
-		elif platform_name == "Linux":
+		elif platform_name == "linux":
 			self.install_linux()
 		else:
 			raise NotImplementedError(f"Unsupported system: {platform_name}")
