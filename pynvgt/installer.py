@@ -1,5 +1,7 @@
-# Code originally written by Ivan Soto (ims-productions.com)
+# Multiplatform code originally written by Ivan Soto (ims-productions.com)
+# Restructured for PyNVGT
 
+import json
 import os
 import platform
 import subprocess
@@ -12,12 +14,15 @@ from typing import Optional
 
 
 BASE_URL = "https://nvgt.gg"
+GITHUB_API_URL = "https://api.github.com/repos/samtupy/nvgt/releases/tags/latest"
 GITHUB_BASE_URL = "https://github.com/samtupy/nvgt/releases/download/latest"
 
 
 @dataclass
 class NVGTBuild:
 	version: str
+	is_dev: bool = False
+	download_urls: Optional[dict] = None
 
 	@property
 	def windows_version(self) -> str:
@@ -33,14 +38,20 @@ class NVGTBuild:
 
 	@property
 	def windows_url(self) -> str:
+		if self.is_dev and self.download_urls:
+			return self.download_urls.get('windows', '')
 		return f"{GITHUB_BASE_URL}/{self.windows_version}"
 
 	@property
 	def linux_url(self) -> str:
+		if self.is_dev and self.download_urls:
+			return self.download_urls.get('linux', '')
 		return f"{GITHUB_BASE_URL}/{self.linux_version}"
 
 	@property
 	def macos_url(self) -> str:
+		if self.is_dev and self.download_urls:
+			return self.download_urls.get('macos', '')
 		return f"{GITHUB_BASE_URL}/{self.macos_version}"
 
 	@property
@@ -60,10 +71,31 @@ class NVGTBuild:
 		return f"{self.macos_install_path}/Contents/MacOS/NVGT"
 
 	@classmethod
-	def get_latest(cls) -> 'NVGTBuild':
-		with urllib.request.urlopen(f"{BASE_URL}/downloads/latest_version") as response:
-			version = response.read().decode('utf-8').strip()
-		return cls(version=version)
+	def get_latest(cls, dev: bool = False) -> 'NVGTBuild':
+		if dev:
+			return cls._get_dev_version()
+		else:
+			with urllib.request.urlopen(f"{BASE_URL}/downloads/latest_version") as response:
+				version = response.read().decode('utf-8').strip()
+			return cls(version=version)
+
+	@classmethod
+	def _get_dev_version(cls) -> 'NVGTBuild':
+		with urllib.request.urlopen(GITHUB_API_URL) as response:
+			data = json.loads(response.read().decode('utf-8'))
+			version = data['tag_name']
+			# Extract download URLs from assets
+			download_urls = {}
+			for asset in data['assets']:
+				name = asset['name']
+				if name.endswith('.exe'):
+					download_urls['windows'] = asset['browser_download_url']
+				elif name.endswith('.tar.gz'):
+					download_urls['linux'] = asset['browser_download_url']
+				elif name.endswith('.dmg'):
+					download_urls['macos'] = asset['browser_download_url']
+			
+			return cls(version=version, is_dev=True, download_urls=download_urls)
 
 	def download_file(self, url: str, path: str) -> None:
 		print(f"Downloading: {url}")
@@ -122,6 +154,6 @@ class NVGTBuild:
 			raise NotImplementedError(f"Unsupported system: {platform_name}")
 
 
-def install_nvgt():
-	build = NVGTBuild.get_latest()
+def install_nvgt(dev=False):
+	build = NVGTBuild.get_latest(dev=dev)
 	build.install_for_platform()

@@ -19,7 +19,7 @@ def cli():
 	"-d",
 	"--dev",
 	help="Install the latest development (possibly unstable) version.",
-	flag_value="dev",
+	is_flag=True,
 	default=False
 )
 @click.option(
@@ -29,6 +29,11 @@ def cli():
 )
 def install(dev, path, platform):
 	"Silently installs a copy of NVGT to the provided path."
-	click.echo("Getting latest version...")
-	builder = NVGTBuild.get_latest()
+	if dev:
+		click.echo("Getting latest development version...")
+	else:
+		click.echo("Getting latest version...")
+	builder = NVGTBuild.get_latest(dev=dev)
 	click.echo(f"Found {builder.version}")
+	click.echo(f"Installing for {platform}")
+	builder.install_for_platform(platform)
