@@ -75,6 +75,7 @@ pip install -e .
 This project is sort of everything goes. I wrote it to simplify the creation of CI/CD pipelines and GitHub actions, but would be willing to accept any additions that are well thought out. A few ideas:
 
 - [ ] MCP server for enhanced communication with large language models (in progress)
+- [ ] Documentation manager (`pynvgt doc`) to automatically search through classes, functions, methods, properties and display them from the CLI
 - [ ] Checksum verification. We obviously use SSL to mitigate basic MITM attacks, this would add another layer of protection
 - [ ] Project Scaffolding. Create new NVGT projects with templates (`pynvgt new`), inspired by cookiecutter
 - [ ] Build scripts: watch mode, automated rebuilds, etc
