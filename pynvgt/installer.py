@@ -10,6 +10,7 @@ import urllib.request
 import tempfile
 import shutil
 import tarfile
+import ssl
 from urllib.request import urljoin
 from dataclasses import dataclass
 from typing import Optional
@@ -29,7 +30,9 @@ def _extract_version_from_filename(filename: str) -> str:
 
 def _download_file(url: str, path: str) -> None:
 	print(f"Downloading: {url}")
-	with urllib.request.urlopen(url) as response, open(path, 'wb') as out:
+	context = ssl.create_default_context()
+	request = urllib.request.Request(url)
+	with urllib.request.urlopen(request, timeout=30, context=context) as response, open(path, 'wb') as out:
 		shutil.copyfileobj(response, out)
 	print(f"Downloaded to: {path}")
 
@@ -91,13 +94,17 @@ class NVGTBuild:
 		if dev:
 			return cls._get_dev_version()
 		else:
-			with urllib.request.urlopen(f"{BASE_URL}/downloads/latest_version") as response:
+			context = ssl.create_default_context()
+			request = urllib.request.Request(f"{BASE_URL}/downloads/latest_version")
+			with urllib.request.urlopen(request, timeout=30, context=context) as response:
 				version = response.read().decode('utf-8').strip()
 			return cls(version=version)
 
 	@classmethod
 	def _get_dev_version(cls) -> 'NVGTBuild':
-		with urllib.request.urlopen(GITHUB_API_URL) as response:
+		context = ssl.create_default_context()
+		request = urllib.request.Request(GITHUB_API_URL)
+		with urllib.request.urlopen(request, timeout=30, context=context) as response:
 			data = json.loads(response.read().decode('utf-8'))
 			# Extract version and download URLs from assets
 			version = None
