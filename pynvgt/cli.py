@@ -37,3 +37,21 @@ def install(dev, path, platform):
 	click.echo(f"Found {builder.version}")
 	click.echo(f"Installing for {platform}")
 	builder.install_for_platform(platform)
+
+
+@cli.command(name="uninstall")
+@click.option(
+	"-p",
+	"--path",
+	help="""The path from which to remove NVGT. Defaults to "C:\\nvgt" on Windows, "/opt/nvgt" on Linux, and "/Applications/NVGT.app" on MacOS."""
+)
+@click.option(
+	"--platform",
+	default=platform.system().lower(),
+	help=f"""Platform to uninstall from, which can be one of "linux", "darwin", or "windows". Defaults to {platform.system().lower()}, based on the active environment."""
+)
+def uninstall(path, platform):
+	"Removes an existing NVGT installation from the specified path."
+	click.echo(f"Uninstalling NVGT for {platform}")
+	builder = NVGTBuild(version="")  # Version not needed for uninstall
+	builder.uninstall_for_platform(platform, path)

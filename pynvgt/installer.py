@@ -127,6 +127,7 @@ class NVGTBuild:
 				f"/DIR={self.windows_install_path}"
 			], check=True)
 			print(f"NVGT installed on Windows at {self.windows_install_path}")
+
 	def install_macos(self) -> None:
 		with tempfile.TemporaryDirectory() as tmp:
 			dmg_path = os.path.join(tmp, self.macos_version)
@@ -163,6 +164,54 @@ class NVGTBuild:
 			self.install_macos()
 		elif platform_name == "linux":
 			self.install_linux()
+		else:
+			raise NotImplementedError(f"Unsupported system: {platform_name}")
+
+	def uninstall_windows(self, path: Optional[str] = None) -> None:
+		install_path = path or self.windows_install_path
+		uninstaller = os.path.join(install_path, "unins000.exe")
+		if not os.path.isdir(install_path):
+			print(f"NVGT installation not found at {install_path}")
+			return
+		if os.path.exists(uninstaller):
+			print("Running uninstaller")
+			subprocess.run([
+				uninstaller,
+				"/VERYSILENT",
+				"/SUPPRESSMSGBOXES",
+				"/NORESTART"
+			], check=True)
+		# Even if unins000 was executed, the directory may have been left behind, so clean it up
+		if os.path.exists(install_path):
+			shutil.rmtree(install_path)
+		print(f"NVGT uninstalled from Windows at {install_path}")
+
+	def uninstall_macos(self, path: Optional[str] = None) -> None:
+		install_path = path or self.macos_install_path
+		if os.path.exists(install_path):
+			subprocess.run(["sudo", "rm", "-rf", install_path], check=True)
+			print(f"NVGT uninstalled from macOS at {install_path}")
+		else:
+			print(f"NVGT installation not found at {install_path}")
+
+	def uninstall_linux(self, path: Optional[str] = None) -> None:
+		install_path = path or self.linux_install_path
+		if os.path.exists(install_path):
+			shutil.rmtree(install_path)
+			print(f"NVGT uninstalled from Linux at {install_path}")
+		else:
+			print(f"NVGT installation not found at {install_path}")
+
+	def uninstall_for_platform(self, platform_name: Optional[str] = None, path: Optional[str] = None) -> None:
+		if platform_name is None:
+			platform_name = platform.system()
+		platform_name = platform_name.lower()
+		if platform_name == "windows":
+			self.uninstall_windows(path)
+		elif platform_name == "darwin":
+			self.uninstall_macos(path)
+		elif platform_name == "linux":
+			self.uninstall_linux(path)
 		else:
 			raise NotImplementedError(f"Unsupported system: {platform_name}")
 
